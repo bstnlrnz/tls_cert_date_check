@@ -3,7 +3,9 @@
 # easy_install termcolor
 # use:
 # python tls_cert_date_check.py /path/to/xlsx-File.xlsx
-# or configure "DATA_FILE"
+# or configure "FILE"
+
+######################################
 import sys
 import xlrd
 import numpy as np
@@ -11,11 +13,18 @@ import OpenSSL
 import ssl
 from datetime import datetime
 from termcolor import colored
+######################################
+
+
+######################################
+FILE = "path/to/file.xlsx"
+######################################
+
 
 if len(sys.argv) > 1 :
     DATA_FILE = sys.argv[1]
 else:
-    DATA_FILE="/path/to/File.xlsx"
+    DATA_FILE=FILE
 
 #Einlesen der Excel-Datei
 
