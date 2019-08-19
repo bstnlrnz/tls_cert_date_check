@@ -7,7 +7,7 @@
 # usage:
 # python tls_cert_date_check.py /path/to/xlsx-File.xlsx <output.xlsx>
 # python tls_cert_date_check.py -d domain.tld
-# or configure "FILE". Writing to an xlsx-output file is optional.
+# or configure "FILE". Writing to a xlsx-output file is optional.
 # While reading from Excel-Files: Please fill in domain names in first column
 ###############################################################################
 import sys
