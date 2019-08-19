@@ -63,9 +63,17 @@ def tls_sni_check(domain):
         conn = ssl.create_connection((hostname, port), timeout)
         context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
         sock = context.wrap_socket(conn, server_hostname=hostname)
+
+        # Abruf Zertifikats
+        #cert_bin = sock.getpeercert(True)
+        #x509 = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_ASN1, cert_bin)
+        #print("CN=" + x509.get_subject().CN)
+
         # Umwandeln in PEM Format
         certificate = ssl.DER_cert_to_PEM_cert(sock.getpeercert(True))
         cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, certificate)
+        # Abfrage des CNs
+        commonname = cert.get_subject().CN
         # Abfrage der Seriennummer
         serial = '{0:x}'.format(int(cert.get_serial_number()))
         # TRUE wenn abgelaufen
@@ -75,12 +83,12 @@ def tls_sni_check(domain):
         # date beinhaltet Datum als String
         date = datetime.strftime(datetime.strptime(cert.get_notAfter().decode('utf-8'), "%Y%m%d%H%M%SZ"),"%Y-%m-%d %H:%M:%S")
         if expired == True:
-            return ("!! UNGUELTIG !!"), date, remain, serial
+            return ("!! UNGUELTIG !!"), date, remain, serial, commonname
         else:
-            return ("GUELTIG"), date, remain, serial
+            return ("GUELTIG"), date, remain, serial, commonname
     except:
         err="Timeout beim Verbindungsaufbau"
-        return err, None, None, None
+        return err, None, None, None, None
 
 # Berechnen der verblebenden Laufzeit
 def remaining_days(date):
@@ -111,12 +119,13 @@ for i in range(0, size):
     else:
         domain=x_data
     # Ausgabe GUELTIG, UNGUELTIG oder None
-    result, date, remain, serial = tls_sni_check(domain)
+    result, date, remain, serial, commonname = tls_sni_check(domain)
     if len(sys.argv) == 3 and sys.argv[1] != "-d":
         worksheet.write(i, 0, domain) #1. Spalte Name der Domain
         worksheet.write(i, 1, date)   #2. Spalte Datum
         worksheet.write(i, 2, result) #3. Spalte: Gueltig, Ungueltig oder Fehlermeldung
         worksheet.write(i, 4, serial) #4. Spalte: SN der Zertifikats
+        worksheet.write(i, 5, commonname) #5. Spalte: CN der Zertifikats
         if remain != None:
             worksheet.write(i,3, "Noch "+remaining_days(remain)+"Tage gueltig!") #4. Spalte: Ausgabe verbleibender Tage
             if result == "!! UNGUELTIG !!":
@@ -125,13 +134,13 @@ for i in range(0, size):
     # Ausgabe des Datums
         if result == "!! UNGUELTIG !!":
             #print(date),
-            print colored (date+" "+domain+" "+result+" Abgelaufen seit "+remaining_days(remain).split("-")[1]+"Tagen", 'red')
+            print colored (date+" "+domain+" CN:"+commonname+" "+result+" Abgelaufen seit "+remaining_days(remain).split("-")[1]+"Tagen", 'red')
         else:
             if result == None or remain == None:
                 print colored ("Timeout beim Verbindungsaufbau zu "+domain, 'red')
             else:
                 #print(date),
-                print colored (date+" "+domain+" "+result+" "+"Restliche Tage: "+remaining_days(remain), 'green')
+                print colored (date+" "+domain+" CN:"+commonname+" "+result+" "+"Restliche Tage: "+remaining_days(remain), 'green')
 if len(sys.argv) == 3 and sys.argv[1] != "-d":
     book.close()
 else:
